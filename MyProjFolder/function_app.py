@@ -1,27 +1,45 @@
 import azure.functions as func
-import datetime
-import json
 import logging
+import json
+
+WORDS = {
+    "house": "door",
+    "dog": "cat",
+    "sun": "moon",
+    "book": "page",
+    "tree": "leaf",
+    "car": "wheel",
+    "pen": "paper",
+    "cup": "coffee"
+}
 
 app = func.FunctionApp()
 
-@app.route(route="MyHttpTrigger", auth_level=func.AuthLevel.ANONYMOUS)
-def MyHttpTrigger(req: func.HttpRequest) -> func.HttpResponse:
+@app.route(route="WordAssociation", auth_level=func.AuthLevel.ANONYMOUS)
+def WordAssociation(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
 
-    name = req.params.get('name')
-    if not name:
-        try:
-            req_body = req.get_json()
-        except ValueError:
-            pass
-        else:
-            name = req_body.get('name')
-
-    if name:
-        return func.HttpResponse(f"Hello, {name}. This HTTP triggered function executed successfully.")
+    word = req.params.get('word')
+    
+    if not word:
+        return func.HttpResponse(
+            json.dumps(WORDS, indent=2),
+            mimetype="application/json",
+            status_code=200
+        )
+    
+    word = word.lower()
+    
+    if word in WORDS:
+        associated_word = WORDS[word]
+        return func.HttpResponse(
+            json.dumps({"input": word, "associated": associated_word}),
+            mimetype="application/json",
+            status_code=200
+        )
     else:
         return func.HttpResponse(
-             "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response.",
-             status_code=200
+            json.dumps({"error": f"No association found for '{word}'"}),
+            mimetype="application/json",
+            status_code=404
         )
